@@ -38,9 +38,9 @@ public class CustomerServiceImpl implements CustomerService {
 
 		log.info("Creating new customer");
 
-		String email = request.getEmail().trim().toLowerCase();
+		//String email = request.getEmail().trim().toLowerCase();
 
-		if (customerRepository.existsByEmail(email)) {
+		if (customerRepository.existsByEmailIgnoreCase(request.getEmail())) {
 			log.warn("Customer creation failed. Email already exists");
 			throw new DuplicateResourceException("Customer with email already exists");
 		}

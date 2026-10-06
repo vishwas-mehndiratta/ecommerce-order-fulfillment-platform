@@ -59,7 +59,11 @@ public class CustomerController {
 	}
 
 	@GetMapping
-	@Operation(summary = "Search customers", description = "Search customers using filters, pagination and sorting")
+	@Operation(summary = "Search customers", description = "Search customers using filters, pagination and sorting. Supports filtering by firstName, lastName, email, customerNumber, and status with configurable pagination and sorting")
+	@ApiResponses({
+			@ApiResponse(responseCode = "200", description = "Customers retrieved successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Page.class))),
+			@ApiResponse(responseCode = "400", description = "Invalid request parameters", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))) })
 	public ResponseEntity<Page<CustomerResponse>> getCustomers(@RequestParam(required = false) String firstName,
 			@RequestParam(required = false) String lastName, @RequestParam(required = false) String email,
 			@RequestParam(required = false) String customerNumber,
@@ -71,17 +75,35 @@ public class CustomerController {
 	}
 
 	@GetMapping("/{customerNumber}")
+	@Operation(summary = "Get customer by customer number", description = "Retrieves a single customer by their unique customer number")
+	@ApiResponses({
+			@ApiResponse(responseCode = "200", description = "Customer retrieved successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = CustomerResponse.class))),
+			@ApiResponse(responseCode = "404", description = "Customer not found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))) })
 	public ResponseEntity<CustomerResponse> getCustomer(@PathVariable String customerNumber) {
 		return ResponseEntity.ok(customerService.getCustomerByCustomerNumber(customerNumber));
 	}
 
 	@PutMapping("/{customerNumber}")
+	@Operation(summary = "Update customer details", description = "Updates customer information (firstName, lastName, email, phone) for an existing customer. The customer number is used to identify the customer and cannot be changed")
+	@ApiResponses({
+			@ApiResponse(responseCode = "200", description = "Customer updated successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = CustomerResponse.class))),
+			@ApiResponse(responseCode = "400", description = "Invalid request - validation failed", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "404", description = "Customer not found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "409", description = "Conflict - email already associated with another customer", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))) })
 	public ResponseEntity<CustomerResponse> updateCustomer(@PathVariable String customerNumber,
 			@Valid @RequestBody CustomerUpdateRequest request) {
 		return ResponseEntity.ok(customerService.updateCustomer(customerNumber, request));
 	}
 
 	@PatchMapping("/{customerNumber}/status")
+	@Operation(summary = "Update customer status", description = "Updates the status of a customer. Supported statuses: ACTIVE, INACTIVE, DELETED")
+	@ApiResponses({
+			@ApiResponse(responseCode = "200", description = "Customer status updated successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = CustomerResponse.class))),
+			@ApiResponse(responseCode = "400", description = "Invalid request - validation failed or invalid status", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "404", description = "Customer not found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))) })
 	public ResponseEntity<CustomerResponse> updateCustomerStatus(@PathVariable String customerNumber,
 			@Valid @RequestBody CustomerStatusRequest request) {
 
@@ -90,6 +112,11 @@ public class CustomerController {
 
 	@DeleteMapping("/{customerNumber}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
+	@Operation(summary = "Delete customer", description = "Performs a soft delete of a customer by changing their status to DELETED. The customer record remains in the database but is marked as inactive")
+	@ApiResponses({
+			@ApiResponse(responseCode = "204", description = "Customer deleted successfully"),
+			@ApiResponse(responseCode = "404", description = "Customer not found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))) })
 	public void deleteCustomer(@PathVariable String customerNumber) {
 
 		customerService.deleteCustomer(customerNumber);
